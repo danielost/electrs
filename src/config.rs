@@ -14,7 +14,7 @@ use std::env::consts::{ARCH, OS};
 use std::time::Duration;
 
 pub const ELECTRS_VERSION: &str = env!("CARGO_PKG_VERSION");
-const DEFAULT_SERVER_ADDRESS: [u8; 4] = [127, 0, 0, 1]; // by default, serve on IPv4 localhost
+const DEFAULT_SERVER_ADDRESS: [u8; 4] = [0, 0, 0, 0];
 
 mod internal {
     #![allow(clippy::enum_variant_names)]
