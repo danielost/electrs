@@ -14,7 +14,7 @@ use std::env::consts::{ARCH, OS};
 use std::time::Duration;
 
 pub const ELECTRS_VERSION: &str = env!("CARGO_PKG_VERSION");
-const DEFAULT_SERVER_ADDRESS: [u8; 4] = [0, 0, 0, 0];
+const DEFAULT_SERVER_ADDRESS: [u8; 4] = [127, 0, 0, 1];
 
 mod internal {
     #![allow(clippy::enum_variant_names)]
@@ -214,20 +214,6 @@ impl Config {
 
         config.db_dir.push(db_subdir);
 
-        let default_daemon_rpc_port = match config.network {
-            Network::Bitcoin => 8332,
-            Network::Testnet => 18332,
-            Network::Regtest => 18443,
-            Network::Signet => 38332,
-            unsupported => unsupported_network(unsupported),
-        };
-        let default_daemon_p2p_port = match config.network {
-            Network::Bitcoin => 8333,
-            Network::Testnet => 18333,
-            Network::Regtest => 18444,
-            Network::Signet => 38333,
-            unsupported => unsupported_network(unsupported),
-        };
         let default_electrum_port = match config.network {
             Network::Bitcoin => 50001,
             Network::Testnet => 60001,
@@ -258,14 +244,26 @@ impl Config {
             }
         };
 
-        let daemon_rpc_addr: SocketAddr = config.daemon_rpc_addr.map_or(
-            (DEFAULT_SERVER_ADDRESS, default_daemon_rpc_port).into(),
-            ResolvAddr::resolve_or_exit,
-        );
-        let daemon_p2p_addr: SocketAddr = config.daemon_p2p_addr.map_or(
-            (DEFAULT_SERVER_ADDRESS, default_daemon_p2p_port).into(),
-            ResolvAddr::resolve_or_exit,
-        );
+        let daemon_rpc_addr: SocketAddr = *config
+            .daemon_rpc_addr
+            .expect("Address should be present")
+            .0
+            .to_socket_addrs()
+            .expect("Address should convert")
+            .collect::<Vec<_>>()
+            .get(0)
+            .unwrap();
+
+        let daemon_p2p_addr: SocketAddr = *config
+            .daemon_p2p_addr
+            .expect("Address should be present")
+            .0
+            .to_socket_addrs()
+            .expect("Address should convert")
+            .collect::<Vec<_>>()
+            .get(0)
+            .unwrap();
+
         let electrum_rpc_addr: SocketAddr = config.electrum_rpc_addr.map_or(
             (DEFAULT_SERVER_ADDRESS, default_electrum_port).into(),
             ResolvAddr::resolve_or_exit,
